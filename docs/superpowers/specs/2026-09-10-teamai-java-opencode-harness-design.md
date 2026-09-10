@@ -6,7 +6,7 @@ Build a standalone TeamAI team repository for enterprise Java backend developmen
 
 ## Authority
 
-This repository follows the current `Tencent/teamai-cli` source contract, with current source taking precedence over older template examples. The design was checked against TeamAI CLI main source observed on 2026-09-10 (including `src/types.ts`, `src/resources/skills.ts`, `src/resources/rules.ts`, `src/resources/agents.ts`, `src/resources/agent-format.ts`, `src/known-agents.ts`) and the official `teamai-hub/template-backend` repository.
+This repository follows the current `Tencent/teamai-cli` source contract, with current source taking precedence over older template examples. The design was checked against TeamAI CLI main source observed on 2026-09-10 (including `src/types.ts`, `src/resources/skills.ts`, `src/resources/rules.ts`, `src/resources/opencode-config.ts`, `src/resources/agents.ts`, `src/resources/agent-format.ts`, `src/known-agents.ts`) and the official `teamai-hub/template-backend` repository.
 
 ## Core decision
 
@@ -15,7 +15,7 @@ This repository is a **TeamAI team harness repository**, not a sample Spring Boo
 Canonical resources live only in TeamAI source form:
 
 - `skills/<namespace>/<skill>/SKILL.md`
-- `rules/<namespace>/<rule>.md`
+- OpenCode-active standing rules as root-level `rules/<name>.md`
 - `agents/<name>.yaml`
 - `docs/...`
 - `teamai.yaml`
@@ -33,9 +33,10 @@ The harness MUST NOT commit pre-rendered `.opencode/*` copies to this team repos
 
 1. OpenCode is a first-class TeamAI target in current `toolPaths`.
 2. OpenCode does not auto-scan a rules directory. TeamAI's Rules handler activates/deactivates the TeamAI rule glob in root `opencode.json`; users must not manually duplicate this behavior.
-3. Canonical TeamAI agents use `agents/<name>.yaml`. Current TeamAI CLI renders them to OpenCode Markdown agents and defaults `mode: subagent`.
-4. OpenCode's deprecated common `tools` field is not relied on. OpenCode-specific permission settings, when needed, belong under `tool_extras.opencode` in canonical agent YAML.
-5. Java review agents are targeted to `opencode` so they cannot accidentally depend on Claude-only model/tool semantics.
+3. Current TeamAI `opencodeRulesGlob()` emits `.opencode/rules/*.md` in project scope, not a recursive `**/*.md` glob. Therefore OpenCode-active rules in this harness MUST be flat at the TeamAI `rules/` root. Nested `rules/java/*.md` would be copied but not activated.
+4. Canonical TeamAI agents use `agents/<name>.yaml`. Current TeamAI CLI renders them to OpenCode Markdown agents and defaults `mode: subagent`.
+5. OpenCode's deprecated common `tools` field is not relied on. OpenCode-specific permission settings, when needed, belong under `tool_extras.opencode` in canonical agent YAML.
+6. Java review agents are targeted to `opencode` so they cannot accidentally depend on Claude-only model/tool semantics.
 
 ## Java baseline
 
@@ -71,16 +72,18 @@ Each skill has valid TeamAI/OpenCode-compatible `SKILL.md` frontmatter with expl
 
 ### Rules
 
-`rules/java/` contains always-applicable or broadly applicable constraints:
+OpenCode-active standing rules are deliberately flat at `rules/` because current TeamAI OpenCode activation uses a non-recursive glob:
 
-- `repository-first.md`
-- `coding-style.md`
-- `spring-boot.md`
-- `testing.md`
-- `database.md`
-- `security.md`
-- `build-and-offline.md`
-- `verification.md`
+- `rules/java-repository-first.md`
+- `rules/java-coding-style.md`
+- `rules/java-spring-boot.md`
+- `rules/java-testing.md`
+- `rules/java-database.md`
+- `rules/java-security.md`
+- `rules/java-build-and-offline.md`
+- `rules/java-verification.md`
+
+The `java-` prefix provides namespace-like collision avoidance while keeping every rule matched by `.opencode/rules/*.md` after TeamAI sync.
 
 Rules are intentionally independent of one company's package names or internal infrastructure.
 
@@ -92,7 +95,7 @@ Canonical TeamAI YAML agents:
 - `java-security-reviewer.yaml`
 - `java-database-reviewer.yaml`
 
-All three target OpenCode and use tool-neutral instructions. No Anthropic-specific model name is set.
+All three target OpenCode and use tool-neutral instructions. No Anthropic-specific model name is set. Review agents use `tool_extras.opencode.permission.edit: deny` so review stays read-only.
 
 ## Offline/intranet model
 
@@ -110,12 +113,12 @@ For an existing Java business repository:
 
 1. Install an intranet-approved TeamAI CLI package/version.
 2. `cd` to the Java project root.
-3. Run project-scope `teamai init <team-repo-url>`.
-4. Ensure OpenCode is installed/detectable for the project, then run `teamai pull`.
+3. Run project-scope `teamai init <team-repo-url> --scope project --agent opencode` when the installed TeamAI build accepts explicit OpenCode selection; otherwise use normal project-scope init and verify detection.
+4. Run `teamai pull`.
 5. Verify with `teamai status`, `teamai list --source repo`, `teamai list --source local`, and `teamai doctor`.
-6. OpenCode consumes generated `.opencode/skills`, `.opencode/rules`, `.opencode/agents`, with rules activated by TeamAI-managed `opencode.json` instructions.
+6. OpenCode consumes generated `.opencode/skills`, root-level `.opencode/rules/*.md`, `.opencode/agents`, with rules activated by TeamAI-managed `opencode.json` instructions.
 
-Because TeamAI CLI's published documentation has evolved and some self-repo `--agent` examples lag the broader known-agent registry, this harness documents both the safe auto-detection path and an optional explicit OpenCode enablement path only when the installed CLI reports `opencode` as a valid `--agent` target.
+Because TeamAI CLI's published documentation has evolved and some self-repo agent-choice examples lag the broader known-agent registry, this harness documents both the safe auto-detection path and explicit OpenCode enablement for builds that accept `--agent opencode`.
 
 ## Non-goals
 
@@ -132,6 +135,7 @@ Because TeamAI CLI's published documentation has evolved and some self-repo `--a
 2. Every `SKILL.md` has non-empty `name` and `description` frontmatter.
 3. Every canonical agent YAML has non-empty `name`, `description`, and `instructions`, and `targets: [opencode]`.
 4. No legacy `agents/*.md` is used.
-5. `teamai.yaml` conforms to the current TeamAI config schema and keeps official OpenCode default paths rather than overriding them unnecessarily.
-6. README contains exact standalone-team-repo usage for a Java project and explains generated OpenCode paths.
-7. Offline guidance never assumes public internet access during normal Java development.
+5. All OpenCode-active Java rules are direct files under `rules/`, so current TeamAI `.opencode/rules/*.md` activation matches them.
+6. `teamai.yaml` conforms to the current TeamAI config schema and keeps official OpenCode default paths rather than overriding them unnecessarily.
+7. README contains exact standalone-team-repo usage for a Java project and explains generated OpenCode paths.
+8. Offline guidance never assumes public internet access during normal Java development.
