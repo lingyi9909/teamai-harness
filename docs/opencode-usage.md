@@ -13,7 +13,7 @@ agents  -> .opencode/agents
 MCP     -> opencode.json
 ```
 
-OpenCode 不会自动扫描 rules 目录，所以 TeamAI 会在 `teamai pull` 时维护项目根目录 `opencode.json` 的 `instructions`，让 `.opencode/rules/**/*.md` 真正进入 OpenCode 上下文。
+OpenCode 不会自动扫描 rules 目录，所以 TeamAI 会在 `teamai pull` 时维护项目根目录 `opencode.json` 的 `instructions`。当前 TeamAI 生成的是 `.opencode/rules/*.md` 非递归 glob，因此本 Harness 的 Java rules 全部直接存放在 TeamAI `rules/` 根目录并使用 `java-` 前缀；不要把 OpenCode 需要生效的规则放进 `rules/java/` 等子目录。
 
 ## 2. 在 Java 项目中接入
 
@@ -98,6 +98,7 @@ Review agent 不是为了制造问题。没有可证明的问题时应该明确 
 ## 6. 不应该做的事情
 
 - 不手工维护 TeamAI 已经生成的 `.opencode` 副本；
+- 不把需要 OpenCode 自动加载的 TeamAI rule 放进 `rules/` 子目录；
 - 不因为模板默认 Java 21 就擅自升级已有项目 JDK；
 - 不因为推荐 Spring Boot 3 就擅自迁移 Spring Boot 2 项目；
 - 不把 Maven 和 Gradle 同时引入同一个已有项目；
