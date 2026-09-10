@@ -1,0 +1,8 @@
+upstream: https://github.com/github/awesome-copilot
+commit: 7568a482ce2df38f8965ab5336a3220db796a4ba
+license: MIT
+adapted_skills:
+  - skills/acquire-codebase-knowledge/SKILL.md -> skills/codebase-reconnaissance/SKILL.md
+  - skills/sql-code-review/SKILL.md + skills/sql-optimization/SKILL.md -> skills/database-sql-analysis/SKILL.md
+  - skills/security-review/SKILL.md -> skills/security-review/SKILL.md
+notes: Adapted for lightweight Java backend use, TeamAI/OpenCode distribution, Windows-native development, and offline enterprise environments.

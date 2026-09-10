@@ -2,14 +2,17 @@
 
 A deliberately small TeamAI repository for Java development with OpenCode.
 
-It contains only:
+It contains:
 
 1. the upstream **Superpowers v6.3.0** skill set from `obra/superpowers`;
-2. five lightweight Java standing rules for coding style, Spring, testing, security, and offline Windows builds.
+2. four focused engineering skills for codebase reconnaissance, Java build diagnostics, database/SQL analysis, and security review;
+3. five lightweight Java standing rules for coding style, Spring, testing, security, and offline Windows builds.
 
-It intentionally does **not** contain custom Java workflow skills, custom review agents, generated `.opencode/` files, or a public `teamai.yaml`.
+It intentionally does **not** contain custom review agents, generated `.opencode/` files, or a public `teamai.yaml`.
 
-## Superpowers
+## Skills
+
+### Superpowers v6.3.0
 
 Source: `https://github.com/obra/superpowers`
 
@@ -35,7 +38,20 @@ The complete upstream `skills/` directory is vendored unchanged, including:
 
 Upstream license and version provenance are retained under `third_party/superpowers/`.
 
-Note: the upstream Superpowers `brainstorming` skill includes an optional Visual Companion. That feature uses its bundled shell/Node scripts. On Windows it expects a compatible shell such as Git Bash plus Node.js. The ordinary skills do not require the Visual Companion to be used for every task.
+Note: the upstream Superpowers `brainstorming` skill includes an optional Visual Companion. That feature uses its bundled shell/Node scripts. On Windows it expects a compatible shell such as Git Bash plus Node.js. Ordinary skill use does not require the Visual Companion.
+
+### Focused engineering skills
+
+Four additional skills complement Superpowers instead of duplicating its general workflow capabilities:
+
+- `codebase-reconnaissance` — task-scoped understanding of an unfamiliar repository, relevant modules, call/data flow, tests, and constraints before editing.
+- `java-build-diagnostics` — Java/JDK/Maven/Gradle/classpath/annotation-processing/Spring Boot startup diagnostics with Windows and offline-enterprise constraints.
+- `database-sql-analysis` — SQL plus MyBatis/MyBatis-Plus/JPA/Hibernate/JDBC correctness, injection, transactions, locking, indexes, pagination, batching, and performance analysis.
+- `security-review` — evidence-backed Java/Spring security review focused on trust boundaries, authorization, injection, SSRF/files/deserialization, secrets, crypto, business logic, and locally verified dependency risk.
+
+`codebase-reconnaissance`, `database-sql-analysis`, and `security-review` are lightweight adaptations inspired by the MIT-licensed `github/awesome-copilot` skills pinned at commit `7568a482ce2df38f8965ab5336a3220db796a4ba`. Their provenance and license are retained under `third_party/github-awesome-copilot/`.
+
+`java-build-diagnostics` is maintained by this harness because the public skill ecosystem does not provide an equivalent fit for the Java + Windows-native + offline enterprise environment targeted here.
 
 ## Java rules
 
@@ -67,12 +83,11 @@ With current TeamAI/OpenCode mappings, skills are installed under `.opencode/ski
 
 TeamAI CLI, OpenCode, JDKs, Maven/Gradle artifacts, and any other runtime dependencies must be installed or mirrored inside the company network separately.
 
-## Updating Superpowers
+## Upgrade policy
 
-Upgrades should be deliberate. When moving to a newer Superpowers release:
+Keep the harness small and upgrades deliberate:
 
-1. review the upstream release notes and license;
-2. replace the vendored `skills/` directory from the chosen tag;
-3. update `third_party/superpowers/VERSION`;
-4. verify the copied `skills/` directory matches that upstream tag;
-5. run a real `teamai pull` + OpenCode smoke test in the internal environment.
+- update Superpowers only after reviewing the upstream release and re-verifying the vendored `skills/` tree;
+- review upstream changes before refreshing any `awesome-copilot`-derived skill;
+- do not add generic skills that substantially overlap Superpowers or the existing four focused skills;
+- run a real `teamai pull` + OpenCode smoke test in the internal environment after material skill changes.
