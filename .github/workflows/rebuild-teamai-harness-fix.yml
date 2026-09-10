@@ -30,6 +30,7 @@ jobs:
           git clone --quiet --depth 1 --branch v6.3.0 https://github.com/obra/superpowers.git "$RUNNER_TEMP/superpowers"
           test "$(git -C "$RUNNER_TEMP/superpowers" rev-parse HEAD)" = "b36e0829c6d0140e93cfef2ca599b1b07d4a7797"
 
+          rm -rf rules
           python3 - <<'PY'
           from pathlib import Path
 
