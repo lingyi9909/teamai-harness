@@ -32,9 +32,8 @@ jobs:
 
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
-          source = Path('.github/workflows/rebuild-teamai-harness.yml').read_text()
+          lines = Path('.github/workflows/rebuild-teamai-harness.yml').read_text().splitlines()
           wanted = [
               'rules/java-coding-style.md',
               'rules/java-spring.md',
@@ -43,21 +42,18 @@ jobs:
               'rules/java-build-offline.md',
               'README.md',
           ]
-          extracted = {}
           for path in wanted:
-              pattern = rf"          cat > {re.escape(path)} <<'EOF'\n(.*?)\n          EOF"
-              match = re.search(pattern, source, flags=re.S)
-              if not match:
-                  raise SystemExit(f'missing heredoc for {path}')
-              lines = match.group(1).splitlines()
-              lines = [line[10:] if line.startswith('          ') else line for line in lines]
-              text = '\n'.join(line.rstrip() for line in lines) + '\n'
-              extracted[path] = text
-
-          for path, text in extracted.items():
-              p = Path(path)
-              p.parent.mkdir(parents=True, exist_ok=True)
-              p.write_text(text)
+              marker = f"          cat > {path} <<'EOF'"
+              try:
+                  start = lines.index(marker) + 1
+                  end = lines.index('          EOF', start)
+              except ValueError as exc:
+                  raise SystemExit(f'missing heredoc for {path}') from exc
+              body = [line[10:] if line.startswith('          ') else line for line in lines[start:end]]
+              text = '\n'.join(line.rstrip() for line in body) + '\n'
+              target = Path(path)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_text(text)
           PY
 
           rm -rf agents docs skills third_party .opencode
