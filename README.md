@@ -10,13 +10,17 @@ teamai-harness/
 ├── skills/
 │   └── java/
 ├── rules/
-│   └── java/
+│   ├── java-repository-first.md
+│   ├── java-coding-style.md
+│   └── java-*.md
 ├── agents/
 ├── docs/
 └── docs/superpowers/
 ```
 
 当业务项目执行 `teamai init` / `teamai pull` 后，TeamAI CLI 再把这些资源转换并同步到业务仓库的 OpenCode 目录。
+
+> **OpenCode 兼容性要求：** 当前 TeamAI CLI 为 OpenCode 写入的 rules `instructions` glob 是 `.opencode/rules/*.md`，不是递归 glob。因此本仓的 Java Rules 必须直接位于 `rules/` 根目录，不能像旧模板那样放在 `rules/common/` 或 `rules/java/` 子目录。Skills 不受这个限制，TeamAI 会递归发现 `skills/java/<skill>/SKILL.md`。
 
 ## 适用场景
 
@@ -80,7 +84,7 @@ TeamAI 当前 project-scope 默认映射：
 └── src/
 ```
 
-OpenCode **不会自动扫描 `.opencode/rules/`**。TeamAI CLI 会负责把 TeamAI rule glob 加入项目根目录 `opencode.json` 的 `instructions`。因此不要手工复制 rules 后期待自动生效，也不要在本团队仓提交生成后的 `.opencode/*`。
+OpenCode **不会自动扫描 `.opencode/rules/`**。TeamAI CLI 会负责把 TeamAI rule glob 加入项目根目录 `opencode.json` 的 `instructions`。当前 TeamAI 使用的是直接子文件 `*.md` glob，所以本仓的 rules 已全部扁平放在 `rules/` 根目录。不要手工复制 rules 后期待自动生效，也不要在本团队仓提交生成后的 `.opencode/*`。
 
 ## 仓库包含的 Java 能力
 
@@ -95,7 +99,7 @@ OpenCode **不会自动扫描 `.opencode/rules/`**。TeamAI CLI 会负责把 Tea
 
 ### Rules
 
-覆盖 repository-first、Java 编码风格、Spring Boot、测试、数据库、安全、内网构建、最终验证。
+覆盖 repository-first、Java 编码风格、Spring Boot、测试、数据库、安全、内网构建、最终验证。文件均采用 `rules/java-*.md` 根级布局，以匹配当前 TeamAI → OpenCode 的非递归 rules glob。
 
 ### OpenCode Agents
 
@@ -141,6 +145,6 @@ teamai skill show java-feature-development
 
 ## 兼容性说明
 
-本仓以 **TeamAI CLI 当前源码契约** 为准。官方 `teamai-hub/template-backend` 是本项目的结构参考，但其中 `agents/*.md` 属于旧兼容格式；当前 TeamAI CLI 的 canonical 新格式是 `agents/<name>.yaml`，这也是本仓采用的格式。
+本仓以 **TeamAI CLI 当前源码契约** 为准。官方 `teamai-hub/template-backend` 是本项目的结构参考，但其中 `agents/*.md` 属于旧兼容格式，且其嵌套 `rules/common/` 布局不能直接满足当前 TeamAI → OpenCode 的非递归 rules activation。当前 TeamAI CLI 的 canonical agent 新格式是 `agents/<name>.yaml`，本仓按当前源码做了 OpenCode 专化。
 
 详见 [`docs/teamai-compatibility.md`](docs/teamai-compatibility.md)。
