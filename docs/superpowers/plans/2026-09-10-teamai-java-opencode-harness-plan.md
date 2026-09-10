@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a TeamAI-compliant Java backend harness repository whose canonical skills, rules, and agents are deployed by TeamAI into OpenCode project scope and remain usable in an offline corporate network.
+**Goal:** Build a portable TeamAI-compliant Java backend harness template whose canonical skills, rules, and agents can be copied unchanged into an intranet team repository, initialized there, and deployed by TeamAI into OpenCode project scope.
 
-**Architecture:** Keep only TeamAI canonical resources in this repository. Java workflows live under `skills/java`; OpenCode-active standing constraints live as flat `rules/java-*.md` files because current TeamAI activates only `.opencode/rules/*.md`; OpenCode-targeted subagents live under `agents/*.yaml`. TeamAI CLI performs all rendering/synchronization into `.opencode/*` and root `opencode.json` in consumer repositories.
+**Architecture:** Keep only portable TeamAI canonical resources in this public template. Java workflows live under `skills/java`; OpenCode-active standing constraints live as flat `rules/java-*.md` files because current TeamAI activates only `.opencode/rules/*.md`; OpenCode-targeted subagents live under `agents/*.yaml`. The public template omits `teamai.yaml`; TeamAI creates it for the actual internal team repo during first initialization. TeamAI CLI performs all rendering/synchronization into `.opencode/*` and root `opencode.json` in consumer repositories.
 
 **Tech Stack:** TeamAI CLI current source contract, OpenCode, Markdown/YAML, Java 17+/21, Spring Boot 3.x, Maven/Gradle wrappers, JUnit 5.
 
@@ -13,6 +13,7 @@
 ## Global Constraints
 
 - TeamAI CLI current source contract has authority over stale template examples.
+- Public template MUST NOT hard-code `teamai.yaml` repo/provider identity.
 - Canonical agents MUST use `agents/<name>.yaml`, not legacy `agents/*.md`.
 - OpenCode-active rules MUST be direct files under `rules/` while current TeamAI `opencodeRulesGlob()` is non-recursive.
 - OpenCode generated resources MUST NOT be committed into this team repository.
@@ -22,19 +23,20 @@
 
 ---
 
-### Task 1: Team repository contract and usage docs
+### Task 1: Portable team-template contract and usage docs
 
 **Files:**
-- Create: `teamai.yaml`
 - Create: `README.md`
 - Create: `docs/opencode-usage.md`
 - Create: `docs/intranet-bootstrap.md`
+- Omit: `teamai.yaml` from the public template
 
 **Interfaces:**
-- Consumes: current TeamAI `TeamaiConfigSchema` and OpenCode default tool paths.
-- Produces: a valid standalone TeamAI team repository and exact operator instructions.
+- Consumes: current TeamAI standalone init behavior and OpenCode default tool paths.
+- Produces: a portable template plus exact operator instructions for creating the real internal team configuration.
 
-- [x] Create a minimal `teamai.yaml` containing only schema-valid fields required for this team repo; do not override official `toolPaths` defaults.
+- [x] Keep the public template free of `teamai.yaml` so no external repo/provider identity leaks into the intranet copy.
+- [x] Document that first `teamai init <internal-team-repo-url>` creates the actual internal team's `teamai.yaml`.
 - [x] Document project-scope initialization, pull/status/doctor verification, and OpenCode generated destinations.
 - [x] Document offline bootstrap boundary: TeamAI CLI package/repo must already be mirrored or copied into the intranet before use.
 - [x] Verify no documentation tells normal coding agents to access public registries or fetch-and-execute scripts.
@@ -115,7 +117,8 @@
 
 - [x] Document the canonical-vs-generated resource mapping.
 - [x] Record why current YAML agent format supersedes the old official backend template's legacy Markdown agents.
+- [x] Record why a portable public template omits `teamai.yaml` and how TeamAI creates the internal one.
 - [x] Record the current TeamAI OpenCode non-recursive rules-glob constraint and flatten rules accordingly.
 - [x] Verify the repository tree contains no `.opencode` generated copies.
-- [x] Re-read all `SKILL.md`, `agents/*.yaml`, `teamai.yaml`, README, and offline guidance for schema/contract consistency.
+- [x] Re-read all `SKILL.md`, `agents/*.yaml`, README, bootstrap, and compatibility guidance for schema/contract consistency.
 - [ ] Fetch the final post-fix `develop` tree and compare it against this plan before declaring completion.
