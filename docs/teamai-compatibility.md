@@ -7,6 +7,7 @@ This harness was designed against the current public `Tencent/teamai-cli` main s
 Relevant TeamAI implementation contracts inspected:
 
 - `src/types.ts` — `TeamaiConfigSchema` and default tool paths;
+- `src/init.ts` — standalone team-repo bootstrap, missing `teamai.yaml` creation, scope and agent enablement;
 - `src/resources/skills.ts` — recursive skill discovery and `SKILL.md` frontmatter handling;
 - `src/resources/rules.ts` — recursive rule sync and OpenCode instructions activation;
 - `src/resources/opencode-config.ts` — exact OpenCode rules glob behavior;
@@ -15,28 +16,32 @@ Relevant TeamAI implementation contracts inspected:
 - `src/known-agents.ts` — OpenCode registration/detection;
 - `src/opencode-hooks.ts` / hooks integration — OpenCode plugin lifecycle behavior.
 
-## Canonical TeamAI resource layout
+## Portable template layout
 
-This repository intentionally stores:
+This repository intentionally stores only portable template resources:
 
 ```text
 skills/java/<skill>/SKILL.md
 rules/java-<rule>.md
 agents/<agent>.yaml
-teamai.yaml
+docs/...
+README.md
 ```
 
 It intentionally does **not** store:
 
 ```text
+teamai.yaml                  # generated for the actual team repo by teamai init
 .opencode/skills/
 .opencode/rules/
 .opencode/agents/
 .opencode/plugin/
-opencode.json   # as a generated consumer-project file
+opencode.json                # generated/managed in consumer projects
 ```
 
-Those are deployment targets in a Java business repository and are owned by TeamAI/OpenCode integration.
+This matches the official template workflow: copy/create a team repository from a template, then run `teamai init <actual-team-repo-url>`. Current TeamAI `init` detects a missing remote `teamai.yaml`, creates a default one, and populates `repo` and `provider` from the repository actually being initialized. Omitting `teamai.yaml` is therefore necessary for a template that will be copied unchanged from public GitHub into a private intranet repository.
+
+After first initialization, the newly created `teamai.yaml` belongs to the **internal team repository** and must not be overwritten by future copies of this public template.
 
 ## Skills contract
 
@@ -143,22 +148,7 @@ agents: .opencode/agents
 mcpProject: opencode.json
 ```
 
-OpenCode user scope uses a different prefix under `.config/opencode`, which is why this harness does not override `toolPaths` in `teamai.yaml`. Keeping official defaults allows TeamAI CLI to apply the correct scope-specific mapping.
-
-## `teamai.yaml` strategy
-
-The harness keeps `teamai.yaml` deliberately minimal and schema-valid:
-
-- `team`
-- `description`
-- `repo`
-- `provider`
-- `reviewers`
-- `sharing`
-
-It does not copy TeamAI's default `toolPaths` into the repository. Duplicating the current defaults would freeze path behavior and make future TeamAI fixes harder to inherit.
-
-When this public repository is mirrored to the company intranet, the team administrator should change the `repo` value to the internal canonical repository URL if the locally installed TeamAI CLI relies on that metadata. This is an environment-specific bootstrap edit, not a resource-layout change.
+OpenCode user scope uses a different prefix under `.config/opencode`. This template does not provide custom `toolPaths`; after `teamai init` creates the actual team's `teamai.yaml`, TeamAI's own defaults should be retained unless a concrete internal requirement needs an override.
 
 ## OpenCode enablement
 
@@ -174,9 +164,9 @@ Because CLI documentation examples may lag the source registry, environments wit
 
 When TeamAI CLI is upgraded internally:
 
-1. inspect changes to `TeamaiConfigSchema`, resource handlers, `opencodeRulesGlob()`, and OpenCode agent rendering;
-2. run `teamai pull --dry-run` against a disposable Java repository where supported;
-3. run normal `teamai pull` in the disposable repository;
+1. inspect changes to `TeamaiConfigSchema`, init behavior, resource handlers, `opencodeRulesGlob()`, and OpenCode agent rendering;
+2. run initialization/pull against a disposable Java repository using an internal copy of this template;
+3. verify the internal team repo's generated `teamai.yaml` points at the internal repo/provider;
 4. verify generated `.opencode/skills`, root-level `.opencode/rules/*.md`, `.opencode/agents`, and `opencode.json` instructions;
 5. invoke each Java review agent once on a harmless test diff;
 6. only then roll the new TeamAI version to production developer machines.
