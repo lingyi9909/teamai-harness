@@ -121,4 +121,4 @@
 - [x] Record the current TeamAI OpenCode non-recursive rules-glob constraint and flatten rules accordingly.
 - [x] Verify the repository tree contains no `.opencode` generated copies.
 - [x] Re-read all `SKILL.md`, `agents/*.yaml`, README, bootstrap, and compatibility guidance for schema/contract consistency.
-- [ ] Fetch the final post-fix `develop` tree and compare it against this plan before declaring completion.
+- [x] Fetch the final post-fix `develop` tree and compare it against this plan before declaring completion.
