@@ -1,12 +1,11 @@
 # TeamAI Java + OpenCode Harness
 
-面向企业 Java 后端项目的 TeamAI 团队 Harness，重点适配 **OpenCode**。
+面向企业 Java 后端项目的 TeamAI 团队 Harness 模板，重点适配 **OpenCode**。
 
-这个仓库不是 Java 示例工程，也不是 `.opencode/` 生成目录。它保存 TeamAI 的 canonical 团队资源：
+这个仓库不是 Java 示例工程，也不是 `.opencode/` 生成目录。它保存可复制的 TeamAI canonical 团队资源：
 
 ```text
 teamai-harness/
-├── teamai.yaml
 ├── skills/
 │   └── java/
 ├── rules/
@@ -17,6 +16,8 @@ teamai-harness/
 ├── docs/
 └── docs/superpowers/
 ```
+
+**模板故意不提交 `teamai.yaml`。** 这与 TeamAI 官方模板的可复制方式一致：复制到你自己的仓库后，第一次对该仓执行 `teamai init <your-team-repo-url>`，TeamAI 会按真实仓库 URL/provider 创建该团队自己的 `teamai.yaml`。这样把本模板原样复制进公司内网时，不会携带外网 GitHub 地址。
 
 当业务项目执行 `teamai init` / `teamai pull` 后，TeamAI CLI 再把这些资源转换并同步到业务仓库的 OpenCode 目录。
 
@@ -43,29 +44,38 @@ teamai-harness/
 
 **已有项目自身配置永远优先。** OpenCode 必须先读取 `pom.xml`、`build.gradle*`、wrapper、父 POM/BOM、源码布局、现有测试和项目规则，再决定具体实现方式，不得为了套模板擅自重构项目。
 
-## 推荐接入方式：独立 TeamAI 团队仓
+## 内网落地：原样复制即可
 
-你在内网可以把本仓库完整复制到一个内部 Git 仓库，例如：
+先把本仓 `develop` 分支内容完整复制/推送到你公司内网新建的团队仓库。不要额外创建 `.opencode/`，也不要从外网模板带入 `teamai.yaml`。
 
-```text
-<internal-teamai-repo-url>
-```
+### 第一次初始化团队仓
 
-然后在任意已有 Java 项目根目录执行：
+在一台已经安装 TeamAI CLI、能访问内网 Git 的开发机上，进入一个 Java 业务项目根目录，然后执行：
 
 ```bash
 teamai init <internal-teamai-repo-url> --scope project --agent opencode
 teamai pull
 ```
 
-如果当前安装的 TeamAI CLI 对 `--agent` 参数行为有版本差异，可先执行：
+当前 TeamAI CLI 如果发现团队仓还没有 `teamai.yaml`，会按这个**内网真实仓地址**和探测到的 provider 创建默认 `teamai.yaml`。第一次初始化后，应把 TeamAI 创建/更新的团队仓配置正常提交/合并到内网团队仓，之后其他成员复用同一个仓库。
+
+如果公司内网镜像的是较旧 TeamAI CLI，对 `--agent opencode` 参数行为与当前源码不同，可先执行：
 
 ```bash
 teamai init <internal-teamai-repo-url> --scope project
 teamai pull
 ```
 
-并通过 `teamai status`、`teamai list --source local` 和 `teamai doctor` 确认 OpenCode 被识别。当前 TeamAI CLI 源码已经包含 `opencode` 的 toolPaths、skills、rules、agents 和 hook/plugin 支持。
+然后通过：
+
+```bash
+teamai status
+teamai list --source repo
+teamai list --source local
+teamai doctor
+```
+
+确认 OpenCode 已识别并完成资源下发。不要通过自定义目录绕过 TeamAI。
 
 ## OpenCode 最终会看到什么
 
@@ -73,7 +83,7 @@ TeamAI 当前 project-scope 默认映射：
 
 ```text
 <your-java-project>/
-├── .teamai/                  # TeamAI 本机项目配置/团队仓副本
+├── .teamai/                  # TeamAI 项目级本地配置/团队仓副本
 ├── .opencode/
 │   ├── skills/               # TeamAI 下发的 Java skills
 │   ├── rules/                # TeamAI 下发的 Java rules
@@ -107,7 +117,7 @@ OpenCode **不会自动扫描 `.opencode/rules/`**。TeamAI CLI 会负责把 Tea
 - `java-security-reviewer`
 - `java-database-reviewer`
 
-团队仓中的 agent 使用 TeamAI 当前 canonical `agents/*.yaml` 格式；`teamai pull` 会为 OpenCode 渲染成 `.opencode/agents/*.md`。
+团队仓中的 agent 使用 TeamAI 当前 canonical `agents/*.yaml` 格式；`teamai pull` 会为 OpenCode 渲染成 `.opencode/agents/*.md`。三个 reviewer 都通过 `tool_extras.opencode.permission.edit: deny` 设为只读 review agent。
 
 ## 日常使用
 
