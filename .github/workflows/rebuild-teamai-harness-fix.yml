@@ -45,7 +45,7 @@ jobs:
           ]
           extracted = {}
           for path in wanted:
-              pattern = rf"cat > {re.escape(path)} <<'EOF'\n(.*?)\n          EOF"
+              pattern = rf"          cat > {re.escape(path)} <<'EOF'\n(.*?)\n          EOF"
               match = re.search(pattern, source, flags=re.S)
               if not match:
                   raise SystemExit(f'missing heredoc for {path}')
