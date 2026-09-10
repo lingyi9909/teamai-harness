@@ -1,0 +1,239 @@
+name: Rebuild minimal TeamAI harness
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - .github/workflows/rebuild-teamai-harness.yml
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    if: contains(github.event.head_commit.message, '[rebuild-teamai-harness]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Fetch pinned Superpowers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth 1 --branch v6.3.0 https://github.com/obra/superpowers.git "$RUNNER_TEMP/superpowers"
+          actual="$(git -C "$RUNNER_TEMP/superpowers" rev-parse HEAD)"
+          expected="b36e0829c6d0140e93cfef2ca599b1b07d4a7797"
+          test "$actual" = "$expected"
+
+      - name: Rebuild repository contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf agents docs skills rules third_party .opencode
+          rm -f teamai.yaml
+
+          mkdir -p skills rules third_party/superpowers
+          cp -a "$RUNNER_TEMP/superpowers/skills/." skills/
+          cp "$RUNNER_TEMP/superpowers/LICENSE" third_party/superpowers/LICENSE
+          cat > third_party/superpowers/VERSION <<'EOF'
+          upstream: https://github.com/obra/superpowers
+          version: v6.3.0
+          commit: b36e0829c6d0140e93cfef2ca599b1b07d4a7797
+          license: MIT
+          EOF
+
+          cat > rules/java-coding-style.md <<'EOF'
+          # Java Coding Style
+
+          Apply these rules to Java code unless the target repository has a more specific convention. Existing project configuration, language level, formatter, Checkstyle/PMD/SpotBugs/Error Prone rules, and established local patterns take precedence.
+
+          - Use the Java version already configured by the project. Do not introduce newer language features unless the build explicitly supports them.
+          - Prefer clear domain names over abbreviations. Classes and methods should have one primary responsibility.
+          - Keep methods small enough to understand locally. Extract logic when it improves naming, reuse, testing, or reduces branching; do not split code mechanically.
+          - Prefer immutable state and `final` where it improves correctness. Avoid shared mutable state and hidden side effects.
+          - Validate required inputs at boundaries. Do not use `Optional` for fields, parameters, or everywhere by default; use it mainly for return values when absence is part of the API.
+          - Do not catch `Exception` or `Throwable` unless there is a boundary-level reason. Preserve the cause when translating exceptions.
+          - Never silently swallow exceptions. Log at the layer that has enough context to act, and avoid duplicate logging of the same failure at every layer.
+          - Prefer straightforward loops and collections code when a Stream pipeline would be harder to read. Do not use Streams for side effects.
+          - Use constants or enums for meaningful repeated values. Avoid unexplained magic numbers and strings.
+          - Implement `equals`, `hashCode`, and `toString` consistently for value-like objects when the project style requires them; avoid including secrets in `toString`.
+          - Be explicit about concurrency and thread safety. Do not introduce shared caches, mutable singletons, parallel streams, or async execution without a concrete need and ownership model.
+          - Comments should explain intent, constraints, invariants, or non-obvious tradeoffs—not restate the code.
+          - Keep changes minimal and consistent with surrounding code. Do not reformat or refactor unrelated files in a functional change.
+          EOF
+
+          cat > rules/java-spring.md <<'EOF'
+          # Java / Spring Rules
+
+          Apply only when the project uses Spring or Spring Boot. Follow the project's existing Spring version, MVC/WebFlux choice, persistence stack, error model, and package structure.
+
+          - Prefer constructor injection. Avoid adding field injection to new code.
+          - Keep controllers focused on transport concerns: request binding, validation, authentication context, and response mapping. Put business decisions in the appropriate service/domain layer.
+          - Use request/response DTOs at external API boundaries when exposing persistence/domain objects would couple the API to internal state.
+          - Use Bean Validation when the project already uses it, and validate data again where a deeper invariant cannot be expressed at the transport boundary.
+          - Put transaction boundaries at coherent business-operation boundaries, normally in the service layer. Do not widen transactions without need.
+          - Remember Spring proxy semantics: self-invocation can bypass proxy-backed behavior such as `@Transactional`, caching, security, retry, and async execution.
+          - Do not mix blocking work into a reactive WebFlux path without an explicit isolation strategy. Do not convert MVC to WebFlux or vice versa as incidental cleanup.
+          - Reuse the project's exception handling and error response conventions. Do not expose stack traces, internal SQL, filesystem paths, or implementation details to clients.
+          - Preserve API compatibility unless the requested change explicitly permits a breaking change.
+          - Do not upgrade Spring, Java, ORM, database drivers, or build plugins merely to simplify an implementation.
+          EOF
+
+          cat > rules/java-testing.md <<'EOF'
+          # Java Testing Rules
+
+          Follow the test framework and patterns already used by the repository. Prefer JUnit 5 for new projects, but do not migrate an existing suite as part of unrelated work.
+
+          - Add or update tests for changed behavior and bug fixes when the behavior can be exercised automatically.
+          - Prefer fast unit tests for isolated logic and focused integration tests for framework, database, serialization, transaction, HTTP, or wiring behavior that mocks cannot prove.
+          - Mock real boundaries, not every collaborator. Avoid tests that only verify implementation call sequences without checking observable behavior.
+          - Keep tests deterministic: control time, randomness, ordering, locale, timezone, external services, and shared state when they affect the result.
+          - Name tests so the behavior and condition are clear. Keep Arrange / Act / Assert readable even if the project uses another equivalent style.
+          - For bug fixes, reproduce the failure in a regression test when practical, then verify the fix.
+          - Do not weaken, delete, or broadly rewrite existing tests merely to make a change pass unless the old expectation is demonstrably obsolete.
+          - Run the narrowest relevant tests first, then the repository's normal broader verification before claiming completion.
+          EOF
+
+          cat > rules/java-security.md <<'EOF'
+          # Java Security Rules
+
+          Treat all external input and identity/authorization context as untrusted unless the application proves otherwise.
+
+          - Never hardcode, print, echo, or commit credentials, tokens, private keys, session identifiers, internal secrets, or sensitive personal data.
+          - Enforce authorization against the actual requested resource/action, not only authentication or a client-supplied role/owner identifier.
+          - Use parameterized SQL or the ORM/query framework's safe parameter binding. Never build SQL from untrusted string concatenation.
+          - Validate and constrain file paths, URLs, redirects, archive entries, and process arguments before use. Guard against traversal, SSRF, open redirects, command injection, and zip-slip style issues where relevant.
+          - Avoid native Java deserialization of untrusted data and unsafe polymorphic deserialization unless the project has an explicit allow-list design.
+          - Encode output for its destination context and follow the framework's established XSS/CSRF protections for web applications.
+          - Use cryptographic APIs already approved by the project. Do not invent encryption schemes or downgrade TLS/certificate validation.
+          - Avoid logging passwords, tokens, authorization headers, full payment data, or sensitive request/response bodies.
+          - Security fixes must preserve evidence: identify the trust boundary, the reachable bad behavior, and the verification used to prove the fix.
+          EOF
+
+          cat > rules/java-build-offline.md <<'EOF'
+          # Java Build and Offline Environment
+
+          This harness is intended for Windows-native enterprise environments that may have no public Internet access.
+
+          - Do not assume WSL. Commands and instructions must work with Windows 10/11 and the tools already present in the repository/environment.
+          - For Maven, prefer `mvnw.cmd` when present; otherwise use the internally configured `mvn`. For Gradle, prefer `gradlew.bat` when present.
+          - Do not add Maven Central, Gradle Plugin Portal, public GitHub package sources, or other public repositories to solve a missing dependency.
+          - Do not use `curl | sh`, public `git clone`, implicit-download `npx`, or similar network bootstrap steps during normal project work.
+          - Respect existing internal mirrors, `settings.xml`, Gradle init scripts, repository managers, and corporate certificate configuration.
+          - If an artifact, plugin, JDK, or tool is unavailable internally, report the exact missing coordinate/version/tool and the failing command. Do not silently change versions or repository configuration to bypass the problem.
+          - Do not commit machine-specific absolute paths, internal credentials, or developer-local repository settings.
+          EOF
+
+          cat > README.md <<'EOF'
+          # TeamAI Java Harness
+
+          A deliberately small TeamAI repository for Java development with OpenCode.
+
+          It contains only:
+
+          1. the upstream **Superpowers v6.3.0** skill set from `obra/superpowers`;
+          2. five lightweight Java standing rules for coding style, Spring, testing, security, and offline Windows builds.
+
+          It intentionally does **not** contain custom Java workflow skills, custom review agents, generated `.opencode/` files, or a public `teamai.yaml`.
+
+          ## Superpowers
+
+          Source: `https://github.com/obra/superpowers`
+
+          Pinned release: **v6.3.0**  
+          Pinned commit: `b36e0829c6d0140e93cfef2ca599b1b07d4a7797`
+
+          The complete upstream `skills/` directory is vendored unchanged, including:
+
+          - `brainstorming`
+          - `dispatching-parallel-agents`
+          - `executing-plans`
+          - `finishing-a-development-branch`
+          - `receiving-code-review`
+          - `requesting-code-review`
+          - `subagent-driven-development`
+          - `systematic-debugging`
+          - `test-driven-development`
+          - `using-git-worktrees`
+          - `using-superpowers`
+          - `verification-before-completion`
+          - `writing-plans`
+          - `writing-skills`
+
+          Upstream license and version provenance are retained under `third_party/superpowers/`.
+
+          Note: the upstream Superpowers `brainstorming` skill includes an optional Visual Companion. That feature uses its bundled shell/Node scripts. On Windows it expects a compatible shell such as Git Bash plus Node.js. The ordinary skills do not require the Visual Companion to be used for every task.
+
+          ## Java rules
+
+          TeamAI distributes these flat files as standing rules:
+
+          - `rules/java-coding-style.md`
+          - `rules/java-spring.md`
+          - `rules/java-testing.md`
+          - `rules/java-security.md`
+          - `rules/java-build-offline.md`
+
+          Repository-local conventions always win over generic rules. The rules do not force a Java/Spring upgrade and do not assume public Internet access.
+
+          ## Internal-network setup
+
+          Copy the contents of this repository into an empty internal Git repository. Keep the public template's lack of `teamai.yaml`; the internal repository should own its actual TeamAI configuration.
+
+          From a Java project that should consume the team harness:
+
+          ```text
+          teamai init <internal-teamai-repo-url> --scope project --agent opencode
+          teamai pull
+          teamai status
+          teamai list --source local --agent opencode --verbose
+          teamai doctor
+          ```
+
+          With current TeamAI/OpenCode mappings, skills are installed under `.opencode/skills/` and rules under `.opencode/rules/`. The Java rule files are intentionally flat because TeamAI's current OpenCode rule instruction glob is non-recursive.
+
+          TeamAI CLI, OpenCode, JDKs, Maven/Gradle artifacts, and any other runtime dependencies must be installed or mirrored inside the company network separately.
+
+          ## Updating Superpowers
+
+          Upgrades should be deliberate. When moving to a newer Superpowers release:
+
+          1. review the upstream release notes and license;
+          2. replace the vendored `skills/` directory from the chosen tag;
+          3. update `third_party/superpowers/VERSION`;
+          4. verify the copied `skills/` directory matches that upstream tag;
+          5. run a real `teamai pull` + OpenCode smoke test in the internal environment.
+          EOF
+
+      - name: Verify rebuilt content
+        shell: bash
+        run: |
+          set -euo pipefail
+          diff -qr "$RUNNER_TEMP/superpowers/skills" skills
+          test "$(find skills -mindepth 2 -maxdepth 2 -type f -name SKILL.md | wc -l | tr -d ' ')" = "14"
+          test "$(find rules -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')" = "5"
+          test ! -e agents
+          test ! -e docs
+          test ! -e teamai.yaml
+          test ! -e .opencode
+          grep -q '^name: brainstorming$' skills/brainstorming/SKILL.md
+          grep -q '^name: using-superpowers$' skills/using-superpowers/SKILL.md
+          grep -q '^name: verification-before-completion$' skills/verification-before-completion/SKILL.md
+
+      - name: Commit rebuilt harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/rebuild-teamai-harness.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+          git config user.name "teamai-harness-builder"
+          git config user.email "teamai-harness-builder@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "refactor: simplify harness to Superpowers and Java rules"
+          git push origin HEAD:develop
