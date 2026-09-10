@@ -9,6 +9,7 @@ Relevant TeamAI implementation contracts inspected:
 - `src/types.ts` — `TeamaiConfigSchema` and default tool paths;
 - `src/resources/skills.ts` — recursive skill discovery and `SKILL.md` frontmatter handling;
 - `src/resources/rules.ts` — recursive rule sync and OpenCode instructions activation;
+- `src/resources/opencode-config.ts` — exact OpenCode rules glob behavior;
 - `src/resources/agents.ts` — canonical YAML agents and legacy Markdown compatibility;
 - `src/resources/agent-format.ts` — `AgentSpec` and OpenCode rendering;
 - `src/known-agents.ts` — OpenCode registration/detection;
@@ -20,7 +21,7 @@ This repository intentionally stores:
 
 ```text
 skills/java/<skill>/SKILL.md
-rules/java/<rule>.md
+rules/java-<rule>.md
 agents/<agent>.yaml
 teamai.yaml
 ```
@@ -60,13 +61,32 @@ description: <non-empty description>
 
 This avoids relying on TeamAI's push-time auto-repair of missing frontmatter.
 
-## Rules contract
+## Rules contract and OpenCode constraint
 
-Current TeamAI rules are canonical Markdown files and are discovered recursively. The `rules/java/*.md` structure therefore remains a valid TeamAI namespace-like organization without requiring OpenCode-specific source files.
+TeamAI's Rules handler recursively discovers and copies canonical Markdown rules. However, the current OpenCode activation implementation is deliberately **non-recursive**: `opencodeRulesGlob()` returns `<rules-dir>/*.md`.
 
-OpenCode-specific behavior matters here: OpenCode does not auto-scan `.opencode/rules`. Current TeamAI Rules handling synchronizes the Markdown files and separately reconciles the TeamAI rules glob in project `opencode.json` `instructions`.
+For project scope that becomes:
 
-Therefore manually copying only `rules/java/*.md` into `.opencode/rules` is not equivalent to `teamai pull`.
+```text
+.opencode/rules/*.md
+```
+
+Therefore a canonical team rule stored at `rules/java/testing.md` would be synchronized to `.opencode/rules/java/testing.md` but would not match TeamAI's current OpenCode `instructions` glob. The file would exist yet remain inactive in OpenCode.
+
+For that reason this OpenCode-first harness keeps all standing Java rules flat at the TeamAI rules root with collision-safe names:
+
+```text
+rules/java-repository-first.md
+rules/java-coding-style.md
+rules/java-spring-boot.md
+rules/java-testing.md
+rules/java-database.md
+rules/java-security.md
+rules/java-build-and-offline.md
+rules/java-verification.md
+```
+
+This is intentionally different from the older backend template's nested `rules/common/` organization. The difference is required by current TeamAI → OpenCode behavior, not by a custom convention invented by this harness.
 
 ## Agent format: important difference from the older backend template
 
@@ -154,11 +174,13 @@ Because CLI documentation examples may lag the source registry, environments wit
 
 When TeamAI CLI is upgraded internally:
 
-1. inspect changes to `TeamaiConfigSchema`, resource handlers and OpenCode rendering;
+1. inspect changes to `TeamaiConfigSchema`, resource handlers, `opencodeRulesGlob()`, and OpenCode agent rendering;
 2. run `teamai pull --dry-run` against a disposable Java repository where supported;
 3. run normal `teamai pull` in the disposable repository;
-4. verify generated `.opencode/skills`, `.opencode/rules`, `.opencode/agents` and `opencode.json` instructions;
+4. verify generated `.opencode/skills`, root-level `.opencode/rules/*.md`, `.opencode/agents`, and `opencode.json` instructions;
 5. invoke each Java review agent once on a harmless test diff;
 6. only then roll the new TeamAI version to production developer machines.
+
+If a future TeamAI release changes OpenCode rules activation to a recursive glob, this harness may reintroduce nested rule namespaces after compatibility testing. Until then, keep rules flat.
 
 Do not fork TeamAI path/layout behavior in this harness to preserve compatibility with an old internal build; prefer upgrading the mirrored CLI or pinning a documented compatible version.
