@@ -1,0 +1,22 @@
+name: validate-teamai-harness
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run harness contract tests
+        run: python -m unittest discover -s tests -v
+      - name: Run standalone validator
+        if: ${{ hashFiles('scripts/validate_harness.py') != '' }}
+        run: python scripts/validate_harness.py
