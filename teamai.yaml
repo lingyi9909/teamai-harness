@@ -1,0 +1,15 @@
+team: java-opencode-harness
+description: TeamAI harness for enterprise Java backend development with OpenCode
+repo: https://github.com/lingyi9909/teamai-harness
+provider: github
+reviewers: []
+sharing:
+  skills: {}
+  rules:
+    enforced: []
+  docs:
+    localDir: ~/.teamai/docs
+  env:
+    injectShellProfile: false
+  recall:
+    enabled: false
