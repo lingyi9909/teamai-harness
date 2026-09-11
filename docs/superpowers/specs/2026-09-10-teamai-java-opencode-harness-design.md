@@ -1,5 +1,15 @@
 # TeamAI Java + OpenCode Harness Design
 
+> Status update (2026-09-11): Historical proposal. The current delivery scope is
+> Code Review plus intranet/TeamAI collaboration; see
+> [the current delivery plan](../../codea-harness/1.7-delivery-plan.md).
+> The Java development/debug/testing skills and separate Java reviewer agents below
+> are not part of this delivery. Formal review stays with the installed Codea Harness
+> Reviewer and Runtime. No new Java/Spring version requirement is imposed on existing
+> projects. The current repository is a mergeable resource pack for an existing team
+> repo; `teamai.yaml` is supplied only as an inactive example to avoid replacing
+> the intranet repository configuration.
+
 ## Goal
 
 Build a standalone TeamAI team repository for enterprise Java backend development that can be initialized into existing business repositories and consumed by OpenCode without hand-maintaining generated `.opencode/*` files.

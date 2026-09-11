@@ -1,0 +1,28 @@
+# 仅供新建内网总仓参考；不是自动生效配置。
+# 已有 teamai.yaml 时保留原文件，不整文件覆盖。
+# 按已安装 TeamAI 版本核对支持字段，并替换 team/repo。
+team: REPLACE_WITH_INTERNAL_TEAM_NAME
+description: Codea Harness Review shared entry and knowledge
+repo: REPLACE_WITH_INTRANET_GIT_URL
+provider: git
+autoUpdate: false
+usageReport: false
+sources: []
+sharing:
+  docs:
+    # 当前 DocsHandler 在 project scope 将 ~/ 替换为 projectRoot；
+    # user scope 则展开到用户目录。确认实际位置后再供知识绑定。
+    localDir: ~/.teamai-docs
+  recall:
+    enabled: false
+  contributeHint:
+    enabled: false
+  env:
+    injectShellProfile: false
+  hooks:
+    autoApply: false
+  mcp:
+    autoApply: false
+# 不声明 packages，不覆盖 toolPaths，不增加日志平台/MCP/登录配置。
+# 这些字段不能充当防火墙，也不代表关闭 TeamAI 自身所有联网探测；
+# 内网安装、provider 工具和所有依赖仍须使用公司已批准的版本与来源。
