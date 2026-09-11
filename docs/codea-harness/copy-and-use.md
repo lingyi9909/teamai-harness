@@ -4,15 +4,15 @@
 
 ## 1. 合并 TeamAI 侧文件
 
-首次将以下内容合并到内网团队资料根，同名文件内容不同则先比对：
+TeamAI原有结构保持不变。首次只将入口、必要协作规则和接入说明合并到原资料位置，同名文件内容不同则先比对：
 
 ```text
 skills/codea-harness-review/
 rules/codea-harness-collaboration.md
 docs/codea-harness/
-docs/codea-knowledge/README.md
-templates/codea-harness/
 ```
+
+`docs/codea-knowledge/README.md`和`templates/codea-harness/`仅为可选参考，不要求复制；已有知识不搬迁。用于研发的旧设计和离线参考不必作为日常TeamAI资源分发，最新完整设计/计划从核心仓同一提交导入内网研发资料位置即可。
 
 `docs/superpowers/` 是历史设计，可作为研发参考保留，不作为 Agent 的生效规范。根 `README.md` 只供阅读，不覆盖总仓已有 README。`.git/`、本机工具配置、凭据和运行记录不复制。
 
@@ -20,7 +20,7 @@ templates/codea-harness/
 
 若原仓已有 roles/projects 资源筛选，把此入口和规则加入对应的现有配置范围；不新增另一套角色系统。只新增一份 `codea-harness-review`，不把 `.code-harness/skills/*` 再复制进 TeamAI `skills/`，也不新增 TeamAI 版 `reviewer` Agent。
 
-## 2. 并列放入 Harness 正式包
+## 2. 原样保存 Harness 完整正式包
 
 从已获准导入内网的**正式安装 ZIP**获取组件，保留包完整目录。当前核对的 1.6.4 安装包根包含：
 
@@ -32,7 +32,7 @@ install.ps1
 .opencode/tools/codea-reviewer-submit.ts
 ```
 
-可以将这些正式包内容与 TeamAI 文件并列放在总仓库根，保留正式包其他附带文件和清单。若总仓已有任一同名运行组件或 OpenCode 配置，不整目录覆盖，保留完整安装包在单独的内网制品目录，从该目录安装。总仓库是否提交二进制沿用公司现有制品管理方式；本包不新增下载/发布工具。
+将完整正式包存放在总仓的一个独立目录，或已有内网制品目录，保留包内全部布局和清单。不要把其中`.code-harness/.opencode/install.ps1`拆散到总仓根。这个目录由Git或公司现有制品方式管理，不属于TeamAI自动安装资源；不要求新增某个固定目录名称，也不新增下载/发布工具。
 
 **只复制 `.code-harness` 不足以接入目前的 1.6.4 Review。** 三个 Reviewer Host 文件与 Runtime 必须来自同一正式包。它们由 Harness 管理，TeamAI 不从总仓根 `.opencode/` 分发这些文件。
 
@@ -42,10 +42,10 @@ install.ps1
 
 以下 Windows 路径仅为操作示例。前提：公司已批准的 PowerShell（须能运行 `pwsh`）、TeamAI、OpenCode、Git 和正式包均可用；不在此步骤安装新依赖。Windows 自带的 `powershell.exe` 不等同于 `pwsh`。缺少 `pwsh` 时先按公司流程申请并准备核心安装说明要求的版本，不直接换成 Windows PowerShell 5.1 执行未经验证的安装。
 
-假设完整正式安装包根是 `D:\team\total-repo`，业务项目是 `D:\work\order-service`。**首次安装**，在 PowerShell 执行：
+假设完整正式安装包根是 `D:\team\total-repo\code-harness\approved-install`，业务项目是 `D:\work\order-service`。目录名是示例，采用已有实际位置即可。**首次安装**，在 PowerShell 执行：
 
 ```powershell
-pwsh -NoProfile -File 'D:\team\total-repo\install.ps1' -ProjectRoot 'D:\work\order-service'
+pwsh -NoProfile -File 'D:\team\total-repo\code-harness\approved-install\install.ps1' -ProjectRoot 'D:\work\order-service'
 ```
 
 安装器按正式契约检查冲突并安装完整组件。项目已有 `.code-harness` 时使用该目标版本的正式 upgrade 包及其入口，不能用首次安装命令覆盖。不得为了通过安装删除项目状态或现有 Reviewer 配置。
